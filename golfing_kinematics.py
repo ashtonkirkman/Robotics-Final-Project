@@ -384,6 +384,15 @@ class SerialArm:
             cur_position = get_current_position(q)
             e = target - cur_position
             return e
+        
+        joint_limits = self.qlim
+        def enforce_joint_limits(q):
+            for i in range(self.n):
+                if q[i] < joint_limits[i][0]:
+                    q[i] = joint_limits[i][0]
+                elif q[i] > joint_limits[i][1]:
+                    q[i] = joint_limits[i][1]
+            return q
 
         error = get_error(q)
         viz = VizScene()
@@ -404,6 +413,7 @@ class SerialArm:
                 J = self.jacob(q)[:3, :]
                 J_dag = J.T @ np.linalg.inv(J @ J.T + kd**2 )
                 q = q + (J_dag @ K @ error).flatten()
+                # q = enforce_joint_limits(q)
                 error = get_error(q)
                 count += 1
                 viz.update(qs=[q])
@@ -412,6 +422,7 @@ class SerialArm:
             elif method == 'J_T':
                 J = self.jacob(q)[:3, :]
                 q = q + (J.T @ K @ error).flatten()
+                # q = enforce_joint_limits(q)
                 error = get_error(q)
                 count += 1
                 viz.update(qs=[q])
